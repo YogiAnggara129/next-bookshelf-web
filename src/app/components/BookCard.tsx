@@ -1,8 +1,8 @@
 import React from "react";
-import { BookDetailEntity } from "@/entities/BookDetailEntity";
+import { BookEntity } from "@/entities/Book";
 
 type Props = {
-	book: BookDetailEntity;
+	book: BookEntity;
 	onView: (id: string) => void;
 	onEdit: (id: string) => void;
 	onDelete: (id: string) => void;

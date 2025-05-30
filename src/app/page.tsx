@@ -1,70 +1,65 @@
 "use client";
 import BookCard from "./components/BookCard";
-import { useEffect, useState } from "react";
-import BookFormModal from "./components/BookForm";
 import { BookDetailEntity } from "@/entities/BookDetailEntity";
-import { dummyBooks } from "@/data/bookDummy";
+import BookForm from "./components/BookForm";
+import { Dialog } from "@headlessui/react";
+import { useBooks } from "./hooks/useBooks";
+import { useState } from "react";
 
 export default function Home() {
-	const [books, setBooks] = useState<BookDetailEntity[]>([]);
-	const [selectedBook, setSelectedBook] = useState<BookDetailEntity | null>(
+	const {
+		books,
+		loading,
+		fetchBooks,
+		addBook,
+		updateBook,
+		deleteBook,
+		getBookDetail,
+	} = useBooks();
+
+	const [formMode, setFormMode] = useState<"add" | "edit" | "view" | null>(
 		null
 	);
-	const [modalMode, setModalMode] = useState<"view" | "edit" | "add" | null>(
-		null
-	);
-
-	useEffect(() => {
-		// Simulasi fetch data
-		const fetchBooks = async () => {
-			// Ganti ini dengan fetch API kalau ada
-			const data: BookDetailEntity[] = dummyBooks;
-			setBooks(data);
-		};
-
-		fetchBooks();
-	}, []);
-	const openModal = (
-		mode: "view" | "edit" | "add",
-		book?: BookDetailEntity
-	) => {
-		setModalMode(mode);
-		setSelectedBook(book ?? null);
-	};
-
 	const closeModal = () => {
-		setModalMode(null);
-		setSelectedBook(null);
+		setFormMode(null);
+		setSelectedBook(undefined);
 	};
 
-	const handleSubmit = (data: Partial<BookDetailEntity>) => {
-		if (modalMode === "add") {
-			const newBook: BookDetailEntity = {
-				...(data as BookDetailEntity),
-				id: Date.now().toString(), // dummy ID
-				insertedAt: new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-			};
-			setBooks((prev) => [...prev, newBook]);
-		} else if (modalMode === "edit" && selectedBook) {
-			setBooks((prev) =>
-				prev.map((b) =>
-					b.id === selectedBook.id
-						? { ...b, ...data, updatedAt: new Date().toISOString() }
-						: b
-				)
-			);
+	const [selectedBook, setSelectedBook] = useState<
+		BookDetailEntity | undefined
+	>();
+
+	const handleAdd = () => {
+		setSelectedBook(undefined);
+		setFormMode("add");
+	};
+
+	const handleEdit = async (id: string) => {
+		const book = await getBookDetail(id);
+		console.log(book);
+		setSelectedBook(book);
+		setFormMode("edit");
+	};
+
+	const handleView = async (id: string) => {
+		const book = await getBookDetail(id);
+		setSelectedBook(book);
+		setFormMode("view");
+	};
+
+	const handleDelete = async (id: string) => {
+		await deleteBook(id);
+		fetchBooks();
+	};
+
+	const handleSubmit = async (data: BookDetailEntity) => {
+		if (formMode === "edit" && data.id) {
+			await updateBook(data);
+		} else {
+			await addBook(data);
 		}
 		closeModal();
-	};
-
-	const handleDelete = (id: string) => {
-		const confirm = window.confirm(
-			"Are you sure you want to delete this book?"
-		);
-		if (confirm) {
-			setBooks((prev) => prev.filter((b) => b.id !== id));
-		}
+		fetchBooks();
 	};
 
 	return (
@@ -74,31 +69,50 @@ export default function Home() {
 			</h1>
 
 			<button
-				onClick={() => openModal("add")}
-				className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
+				onClick={handleAdd}
+				className='bg-green-600 text-white px-4 py-2 rounded mb-4'
 			>
-				Add Book
+				+ Add Book
 			</button>
 
-			<div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
-				{books.map((book) => (
-					<BookCard
-						key={book.id}
-						book={book}
-						onView={() => openModal("view", book)}
-						onEdit={() => openModal("edit", book)}
-						onDelete={handleDelete}
-					/>
-				))}
-			</div>
-
-			{modalMode && (
-				<BookFormModal
-					mode={modalMode}
-					defaultValues={selectedBook ?? undefined}
-					onSubmit={handleSubmit}
-				/>
+			{loading ? (
+				<p className='text-gray-500'>Loading books...</p>
+			) : (
+				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+					{books.map((book) => (
+						<BookCard
+							key={book.id}
+							book={book}
+							onEdit={handleEdit}
+							onView={handleView}
+							onDelete={handleDelete}
+						/>
+					))}
+				</div>
 			)}
+
+			<Dialog
+				open={formMode !== null}
+				onClose={closeModal}
+				className='relative z-50'
+			>
+				<div className='fixed inset-0 bg-black/30' aria-hidden='true' />
+				<div className='fixed inset-0 flex items-center justify-center'>
+					<Dialog.Panel className='bg-white p-6 rounded-xl w-full max-w-md shadow-xl relative'>
+						<button
+							onClick={closeModal}
+							className='absolute top-3 right-3 text-gray-500 hover:text-gray-700'
+						>
+							✕
+						</button>
+						<BookForm
+							mode={formMode!}
+							defaultValues={selectedBook}
+							onSubmit={handleSubmit}
+						/>
+					</Dialog.Panel>
+				</div>
+			</Dialog>
 		</main>
 	);
 }
