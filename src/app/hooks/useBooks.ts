@@ -25,23 +25,49 @@ export const useBooks = () => {
 	}, [fetchBooks]);
 
 	const addBook = async (book: BookDetailEntity) => {
-		await booksApi.createBook(book);
-		const data = await booksApi.getBooks();
-		setBooks(data);
+		setLoading(true);
+		try {
+			await booksApi.createBook(book);
+			const data = await booksApi.getBooks();
+			setBooks(data);
+		} catch (err) {
+			console.error("Failed to add book:", err);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const updateBook = async (book: BookDetailEntity) => {
-		const updated = await booksApi.updateBook(book.id!, book);
-		setBooks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+		setLoading(true);
+		try {
+			await booksApi.updateBook(book.id!, book);
+			const data = await booksApi.getBooks();
+			setBooks(data);
+		} catch (err) {
+			console.error("Failed to add books:", err);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const deleteBook = async (id: string) => {
-		await booksApi.deleteBook(id);
-		setBooks((prev) => prev.filter((b) => b.id !== id));
+		setLoading(true);
+		try {
+			await booksApi.deleteBook(id);
+			const data = await booksApi.getBooks();
+			setBooks(data);
+		} catch (err) {
+			console.error("Failed to add books:", err);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const getBookDetail = async (id: string): Promise<BookDetailEntity> => {
-		return await booksApi.getBookDetail(id);
+		setLoading(true);
+		const data = await booksApi.getBookDetail(id);
+		setLoading(false);
+		return data;
 	};
 
 	return {
