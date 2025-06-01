@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookshelf-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookshelf-frontend
+  template:
+    metadata:
+      labels:
+        app: bookshelf-frontend
+    spec:
+      containers:
+        - name: nextjs
+          image: yogianggara129/bookshelf-frontend:latest-4
+          ports:
+            - containerPort: 3000
+          env:
+            - name: API_URL
+              value: "http://bookshelf.local/api/books"
