@@ -3,7 +3,9 @@ import axios from "axios";
 import { BookDetailEntity } from "@/entities/BookDetailEntity";
 import { BookEntity } from "@/entities/Book";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL!;
+const BASE_URL = process.env.NODE_ENV === 'development'
+    ? process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000'
+    : '__API_URL__';
 
 export const getBooks = async (): Promise<BookEntity[]> => {
 	const res = await axios.get(BASE_URL);
